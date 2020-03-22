@@ -1,16 +1,18 @@
 # Laravel Cashier - Braintree Edition
 
 [![Build Status](https://travis-ci.org/laravel/cashier-braintree.svg)](https://travis-ci.org/laravel/cashier-braintree)
-[![Total Downloads](https://poser.pugx.org/laravel/cashier-braintree/d/total.svg)](https://packagist.org/packages/laravel/cashier-braintree)
+[![Total Downloads](https://poser.pugx.org/laravel/cashier-braintree/d/total.svg)](https://packagist.org/packages/amritms/cashier-braintree)
 [![Latest Stable Version](https://poser.pugx.org/laravel/cashier-braintree/v/stable.svg)](https://packagist.org/packages/laravel/cashier-braintree)
 [![Latest Unstable Version](https://poser.pugx.org/laravel/cashier-braintree/v/unstable.svg)](https://packagist.org/packages/laravel/cashier-braintree)
-[![License](https://poser.pugx.org/laravel/cashier-braintree/license.svg)](https://packagist.org/packages/laravel/cashier-braintree)
+[![License](https://poser.pugx.org/laravel/cashier-braintree/license.svg)](https://packagist.org/packages/amritms/cashier-braintree)
 
 ## Introduction
 
-> Unfortunately, we've decided to abandon maintenance for the laravel/cashier-braintree library. We recommend using the braintree/braintree_php library directly from now on. You're free to fork and maintain your own version if you like.
-
 Laravel Cashier Braintree provides an expressive, fluent interface to [Braintree's](https://www.braintreepayments.com/) subscription billing services. It handles almost all of the boilerplate subscription billing code you are dreading writing. In addition to basic subscription management, Cashier Braintree can handle coupons, swapping subscription, cancellation grace periods, and even generate invoice PDFs.
+
+## Supports
+
+Supports php ^7.2, Laravel ~5.7.0|~5.8.0|~5.9.0|^6.0|^7.0 and phpunit ~8.0
 
 ## Testing
 
