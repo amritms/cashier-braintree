@@ -153,6 +153,7 @@ class SubscriptionBuilder
             'braintree_plan' => $this->plan,
             'quantity' => 1,
             'trial_ends_at' => $trialEndsAt,
+            'starts_at' => Carbon::now(),
             'ends_at' => null,
         ]);
     }
