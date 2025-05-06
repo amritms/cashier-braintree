@@ -5,6 +5,7 @@ namespace Laravel\Cashier;
 use Exception;
 use Carbon\Carbon;
 use Braintree\Customer;
+use Braintree\Gateway;
 use Braintree\Subscription as BraintreeSubscription;
 
 class SubscriptionBuilder
@@ -127,6 +128,7 @@ class SubscriptionBuilder
      */
     public function create($token = null, array $customerOptions = [], array $subscriptionOptions = []): Subscription
     {
+        $gateway = app(Gateway::class);
         $payload = $this->getSubscriptionPayload(
             $this->getBraintreeCustomer($token, $customerOptions), $subscriptionOptions
         );
@@ -135,7 +137,7 @@ class SubscriptionBuilder
             $payload = $this->addCouponToPayload($payload);
         }
 
-        $response = BraintreeSubscription::create($payload);
+        $response = $gateway->subscription()->create($payload);
 
         if (! $response->success) {
             throw new Exception('Braintree failed to create subscription: '.$response->message);

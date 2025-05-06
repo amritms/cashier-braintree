@@ -13,6 +13,7 @@ use Braintree\Result\Successful;
 use Braintree\TransactionSearch;
 use Illuminate\Support\Collection;
 use Braintree\Customer as BraintreeCustomer;
+use Braintree\Gateway;
 use Braintree\Transaction as BraintreeTransaction;
 use Braintree\Subscription as BraintreeSubscription;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -29,7 +30,9 @@ trait Billable
      */
     public function charge($amount, array $options = []): Successful
     {
-        $response = BraintreeTransaction::sale(array_merge([
+        $gateway = app(Gateway::class);
+
+        $response = $gateway->transaction()->sale(array_merge([
             'amount' => number_format($amount * (1 + ($this->taxPercentage() / 100)), 2, '.', ''),
             'paymentMethodToken' => $this->paymentMethod()->token,
             'options' => [
@@ -38,8 +41,8 @@ trait Billable
             'recurring' => true,
         ], $options));
 
-        if (! $response->success) {
-            throw new Exception('Braintree was unable to perform a charge: '.$response->message);
+        if (!$response->success) {
+            throw new Exception('Braintree was unable to perform a charge: ' . $response->message);
         }
 
         return $response;
@@ -109,7 +112,7 @@ trait Billable
         }
 
         return $subscription && $subscription->onTrial() &&
-               $subscription->braintree_plan === $plan;
+            $subscription->braintree_plan === $plan;
     }
 
     /**
@@ -142,7 +145,7 @@ trait Billable
         }
 
         return $subscription->valid() &&
-               $subscription->braintree_plan === $plan;
+            $subscription->braintree_plan === $plan;
     }
 
     /**
@@ -178,9 +181,9 @@ trait Billable
      */
     public function findInvoice($id)
     {
+        $gateway = app(Gateway::class);
         try {
-            $transaction = BraintreeTransaction::find($id);
-
+            $transaction = $gateway->transaction()->find($id);
             if ($transaction->customerDetails->id != $this->braintree_id) {
                 return;
             }
@@ -231,6 +234,7 @@ trait Billable
      */
     public function invoices($includePending = false, $parameters = []): Collection
     {
+        $gateway = app(Gateway::class);
         $invoices = [];
 
         $customer = $this->asBraintreeCustomer();
@@ -243,7 +247,7 @@ trait Billable
             ),
         ], $parameters);
 
-        $transactions = BraintreeTransaction::search($parameters);
+        $transactions = $gateway->transaction()->search($parameters);
 
         // Here we will loop through the Braintree invoices and create our own custom Invoice
         // instance that gets more helper methods and is generally more convenient to work
@@ -281,9 +285,9 @@ trait Billable
      */
     public function updateCard($token, array $options = [])
     {
+        $gateway = app(Gateway::class);
         $customer = $this->asBraintreeCustomer();
-
-        $response = PaymentMethod::create(
+        $response = $gateway->paymentMethod()->create(
             array_replace_recursive([
                 'customerId' => $customer->id,
                 'paymentMethodNonce' => $token,
@@ -294,8 +298,9 @@ trait Billable
             ], $options)
         );
 
+
         if (! $response->success) {
-            throw new Exception('Braintree was unable to create a payment method: '.$response->message);
+            throw new Exception('Braintree was unable to create a payment method: ' . $response->message);
         }
 
         $paypalAccount = $response->paymentMethod instanceof PaypalAccount;
@@ -307,6 +312,7 @@ trait Billable
         ])->save();
 
         $this->updateSubscriptionsToPaymentMethod(
+            $gateway,
             $response->paymentMethod->token
         );
     }
@@ -317,11 +323,11 @@ trait Billable
      * @param  string  $token
      * @return void
      */
-    protected function updateSubscriptionsToPaymentMethod($token)
+    protected function updateSubscriptionsToPaymentMethod($gateway,$token)
     {
         foreach ($this->subscriptions as $subscription) {
             if ($subscription->active()) {
-                BraintreeSubscription::update($subscription->braintree_id, [
+                $gateway->subscription()->update($subscription->braintree_id, [
                     'paymentMethodToken' => $token,
                 ]);
             }
@@ -351,13 +357,12 @@ trait Billable
     /**
      * Get the default payment method for the customer.
      *
-     * @return array
+     * @return \Braintree\CreditCard
      * @throws \Braintree\Exception\NotFound
      */
     public function paymentMethod()
     {
         $customer = $this->asBraintreeCustomer();
-
         foreach ($customer->paymentMethods as $paymentMethod) {
             if ($paymentMethod->isDefault()) {
                 return $paymentMethod;
@@ -412,7 +417,8 @@ trait Billable
      */
     public function createAsBraintreeCustomer($token, array $options = []): Customer
     {
-        $response = BraintreeCustomer::create(
+        $gateway = app(Gateway::class);
+        $response = $gateway->customer()->create(
             array_replace_recursive([
                 'firstName' => Arr::get(explode(' ', $this->name), 0),
                 'lastName' => Arr::get(explode(' ', $this->name), 1),
@@ -427,7 +433,7 @@ trait Billable
         );
 
         if (! $response->success) {
-            throw new Exception('Unable to create Braintree customer: '.$response->message);
+            throw new Exception('Unable to create Braintree customer: ' . $response->message);
         }
 
         $this->braintree_id = $response->customer->id;
@@ -464,7 +470,9 @@ trait Billable
      */
     public function asBraintreeCustomer(): Customer
     {
-        return BraintreeCustomer::find($this->braintree_id);
+        $gateway = app(Gateway::class);
+
+        return $gateway->customer()->find($this->braintree_id);
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace Laravel\Cashier;
 
+use Braintree\Gateway;
 use Exception;
 use Carbon\Carbon;
 use Braintree\Plan;
@@ -148,6 +149,7 @@ class Subscription extends Model
      */
     public function updateQuantity($quantity)
     {
+        $
         $quantity = max(0, $quantity - 1);
 
         $addonName = $this->braintree_plan.'-quantity';
@@ -160,7 +162,7 @@ class Subscription extends Model
                 : ['add' => [['inheritedFromId' => $addonName, 'quantity' => $quantity]]];
         }
 
-        BraintreeSubscription::update($this->braintree_id, ['addOns' => $options]);
+        app(Gateway::class)->subscription()->update($this->braintree_id, ['addOns' => $options]);
 
         $this->quantity = $quantity + 1;
 
@@ -195,7 +197,7 @@ class Subscription extends Model
 
         $subscription = $this->asBraintreeSubscription();
 
-        $response = BraintreeSubscription::update($subscription->id, [
+        $response = app(Gateway::class)->subscription()->update($subscription->id, [
             'planId' => $plan->id,
             'price' => number_format($plan->price * (1 + ($this->owner->taxPercentage() / 100)), 2, '.', ''),
             'neverExpires' => true,
@@ -339,7 +341,7 @@ class Subscription extends Model
             throw new InvalidArgumentException('Unable to apply coupon. Subscription not active.');
         }
 
-        BraintreeSubscription::update($this->braintree_id, [
+        app(Gateway::class)->subscription()->update($this->braintree_id, [
             'discounts' => [
                 'add' => [[
                     'inheritedFromId' => $coupon,
@@ -368,14 +370,15 @@ class Subscription extends Model
      */
     public function cancel()
     {
+        $gateway = app(Gateway::class);
         $subscription = $this->asBraintreeSubscription();
 
         if ($this->onTrial()) {
-            BraintreeSubscription::cancel($subscription->id);
+            $gateway->subscription()->cancel($subscription->id);
 
             $this->markAsCancelled();
         } else {
-            BraintreeSubscription::update($subscription->id, [
+            $gateway->subscription()->update($subscription->id, [
                 'numberOfBillingCycles' => $subscription->currentBillingCycle,
             ]);
 
@@ -394,9 +397,10 @@ class Subscription extends Model
      */
     public function cancelNow()
     {
+        $gateway = app(Gateway::class);
         $subscription = $this->asBraintreeSubscription();
 
-        BraintreeSubscription::cancel($subscription->id);
+        $gateway->subscription()->cancel($subscription->id);
 
         $this->markAsCancelled();
 
@@ -427,7 +431,7 @@ class Subscription extends Model
 
         $subscription = $this->asBraintreeSubscription();
 
-        BraintreeSubscription::update($subscription->id, [
+        app(Gateway::class)->subscription()->update($subscription->id, [
             'neverExpires' => true,
             'numberOfBillingCycles' => null,
         ]);
@@ -456,6 +460,7 @@ class Subscription extends Model
      */
     public function asBraintreeSubscription(): BraintreeSubscription
     {
-        return BraintreeSubscription::find($this->braintree_id);
+    
+        return app(Gateway::class)->subscription()->find($this->braintree_id);
     }
 }
