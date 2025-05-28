@@ -9,9 +9,15 @@ use Laravel\Cashier\Subscription;
 use Braintree\WebhookNotification;
 use Illuminate\Routing\Controller;
 use Symfony\Component\HttpFoundation\Response;
+use Braintree\Gateway;
 
 class WebhookController extends Controller
 {
+    protected $gateway;
+
+    public function __construct(){
+        $this->gateway = app(Gateway::class);
+    }
     /**
      * Handle a Braintree webhook call.
      *
@@ -27,10 +33,10 @@ class WebhookController extends Controller
         }
 
         $method = 'handle'.Str::studly(str_replace('.', '_', $webhook->kind));
-
         if (method_exists($this, $method)) {
             return $this->{$method}($webhook);
         }
+
 
         return $this->missingMethod();
     }
@@ -43,7 +49,7 @@ class WebhookController extends Controller
      */
     protected function parseBraintreeNotification($request)
     {
-        return WebhookNotification::parse($request->bt_signature, $request->bt_payload);
+        return $this->gateway->webhookNotification()->parse($request->bt_signature,$request->bt_payload);
     }
 
     /**

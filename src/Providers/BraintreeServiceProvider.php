@@ -23,9 +23,6 @@ class BraintreeServiceProvider extends ServiceProvider {
                 'privateKey' => config('services.braintree.private_key')
             ]);
         });
-        $this->app->singleton('foo', function() {
-            return 'bar';
-        });
     }
 
     
