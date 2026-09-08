@@ -302,9 +302,12 @@ class Subscription extends Model
      */
     protected function moneyRemainingOnYearlyPlan(Plan $plan)
     {
+        // Days remaining on the plan is always positive; pass absolute=true so the
+        // result is stable across Carbon 2 and Carbon 3 (Carbon 3 reversed the
+        // default sign convention and returns a signed float for diffInDays()).
         return ($plan->price / 365) * Carbon::today()->diffInDays(Carbon::instance(
             $this->asBraintreeSubscription()->billingPeriodEndDate
-        ), false);
+        ), true);
     }
 
     /**
