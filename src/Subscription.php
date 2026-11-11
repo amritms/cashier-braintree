@@ -109,7 +109,7 @@ class Subscription extends Model
     public function onGracePeriod()
     {
         if (! is_null($endsAt = $this->ends_at)) {
-            return Carbon::now()->lt(Carbon::instance($endsAt));
+            return Carbon::now()->lt(Carbon::parse($endsAt));
         }
 
         return false;
